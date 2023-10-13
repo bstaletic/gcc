@@ -3472,6 +3472,97 @@ namespace ranges
 
   inline constexpr __prev_permutation_fn prev_permutation{};
 
+#if __cpp_lib_ranges_starts_ends_with >= 202106L // C++ >= 23
+  struct __starts_with_fn
+  {
+    template<input_iterator _Iter1, sentinel_for<_Iter1> _Sent1,
+           input_iterator _Iter2, sentinel_for<_Iter2> _Sent2,
+           typename _Pred = identity,
+           typename _Proj1,
+           typename _Proj2>
+      requires indirectly_comparable<_Iter1, _Iter2, _Pred, _Proj1, _Proj2>
+      constexpr bool
+      operator()(_Iter1 __first1, _Sent1 __last1,
+               _Iter2 __first2, _Sent2 __last2,
+               _Pred __pred,
+               _Proj1 __proj1 = {},
+               _Proj2 __proj2 = {}) const
+      {
+      while (__first1 != __last1 && __first2 != __last2
+             && (bool)std::__invoke(__pred,
+                                    std::__invoke(__proj1, *__first1),
+                                    std::__invoke(__proj2, *__first2)))
+      {
+        ++__first1;
+        ++__first2;
+      }
+      return __first2 != __last2;
+      }
+
+    template<input_range _Range1, input_range _Range2,
+           typename _Pred = equal_to,
+           typename _Proj1 = identity, typename _Proj2 = identity>
+      requires indirectly_comparable<iterator_t<_Range1>, iterator_t<_Range2>,
+                                   _Pred, _Proj1, _Proj2>
+      constexpr bool
+      operator()(_Range1&& __r1, _Range2&& __r2, _Pred __pred = {},
+               _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const
+      {
+      return (*this)(begin(__r1), end(__r1),
+                     begin(__r2), end(__r2),
+                     std::move(__pred),
+                     std::move(__proj1), std::move(__proj2));
+      }
+  };
+
+  inline constexpr __starts_with_fn starts_with{};
+
+  struct __ends_with_fn
+  {
+    template<input_iterator _Iter1, sentinel_for<_Iter1> _Sent1,
+           input_iterator _Iter2, sentinel_for<_Iter2> _Sent2,
+           class _Pred = equal_to,
+           class _Proj1 = identity,
+           class _Proj2 = identity>
+      requires (forward_iterator<_Iter1> || sized_sentinel_for<_Sent1, _Iter1>) &&
+             (forward_iterator<_Iter2> || sized_sentinel_for<_Sent2, _Iter2>) &&
+             indirectly_comparable<_Iter1, _Iter2, _Pred, _Proj1, _Proj2>
+      constexpr bool
+      operator()(_Iter1 __first1, _Sent1 __last1,
+               _Iter2 __first2, _Sent2 __last2,
+               _Pred __pred,
+               _Proj1 __proj1 = {},
+               _Proj2 __proj2 = {}) const
+      {
+      auto __drop = distance(__first1, __last1) - distance(__first2, __last2);
+      return !(__drop < 0) && equal(std::next(std::move(__first1), __drop), __last1,
+                                            std::move(__first2), __last2,
+                                            __pred,
+                                            __proj1, __proj2);
+      }
+
+    template<input_range _Range1, input_range _Range2,
+           class _Pred = equal_to,
+           class _Proj1 = identity,
+           class _Proj2 = identity>
+      requires (forward_range<_Range1> || sized_range<_Range1>) &&
+             (forward_range<_Range2> || sized_range<_Range2>) &&
+             indirectly_comparable<iterator_t<_Range1>, iterator_t<_Range2>, _Pred, _Proj1, _
+oj2>
+      constexpr bool
+      operator()(_Range1&& __r1, _Range2&& __r2, _Pred __pred = {},
+               _Proj1 __proj1 = {}, _Proj2 __proj2 = {}) const
+      {
+      return (*this)(begin(__r1), end(__r1),
+                     begin(__r2), end(__r2),
+                     std::move(__pred),
+                     std::move(__proj1), std::move(__proj2));
+      }
+  };
+
+  inline constexpr __ends_with_fn ends_with{};
+#endif // __cpp_lib_ranges_starts_ends_with
+
 #if __cpp_lib_ranges_contains >= 202207L // C++ >= 23
   struct __contains_fn
   {

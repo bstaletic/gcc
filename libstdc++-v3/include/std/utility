@@ -253,6 +253,33 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   }
 #endif
 
+#ifdef __cpp_pack_indexing // C++26
+  // Tuple interface to class template integer_sequence
+
+  /// Partial specialization for std::integer_sequence
+  template<typename _Tp, _Tp... _Values>
+    struct tuple_size<integer_sequence<_Tp, _Values...>>
+    : public integral_constant<size_t, sizeof...(_Values)> { };
+
+  /// Partial specialization for std::integer_sequence
+  template<size_t _Ind, typename _Tp, _Tp... _Values>
+    struct tuple_element<_Ind, integer_sequence<_Tp, _Values...>>
+    {
+      static_assert(_Ind < sizeof...(_Values), "integer_sequence index is in range");
+      using type = _Tp;
+    };
+
+  /// Partial specialization for std::integer_sequence
+  template<size_t _Ind, typename _Tp, _Tp... _Values>
+    [[__nodiscard__]]
+    constexpr _Tp
+    get(integer_sequence<_Tp, _Values...>) noexcept
+    {
+      static_assert(_Ind < sizeof...(_Values), "integer_sequence index is within bounds");
+      return _Values...[_Ind];
+    }
+#endif
+
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
